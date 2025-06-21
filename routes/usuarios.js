@@ -5,49 +5,67 @@ const db = require('../db');
 // Obtener todos los usuarios
 router.get('/', (req, res) => {
     db.query('SELECT * FROM usuarios', (err, results) => {
-        if (err) return res.status(500).json({ error: err });
+        if (err) {
+            console.error('Error al obtener los usuarios:', err);
+            return res.status(500).json({ error: 'Error al obtener los usuarios' });
+        }
         res.json(results);
     });
 });
 
 // Obtener un usuario por ID
 router.get('/:id', (req, res) => {
-    const { id } = req.params;
+    const id = req.params.id;
     db.query('SELECT * FROM usuarios WHERE id = ?', [id], (err, results) => {
-        if (err) return res.status(500).json({ error: err });
-        if (results.length === 0) return res.status(404).json({ mensaje: 'No encontrado' });
+        if (err) {
+            console.error('Error al obtener el usuario:', err);
+            return res.status(500).json({ error: 'Error al obtener el usuario' });
+        }
+        if (results.length === 0) {
+            return res.status(404).json({ error: 'Usuario no encontrado' });
+        }
         res.json(results[0]);
     });
 });
 
 // Crear un nuevo usuario
 router.post('/', (req, res) => {
-    const { nombre, correo } = req.body;
-    if (!nombre || !correo) return res.status(400).json({ mensaje: 'Faltan datos' });
+    const { nombre_usuario, nombre, apellido } = req.body;
+    const nuevoUsuario = { nombre_usuario, nombre, apellido };
 
-    db.query('INSERT INTO usuarios (nombre, correo) VALUES (?, ?)', [nombre, correo], (err, result) => {
-        if (err) return res.status(500).json({ error: err });
-        res.status(201).json({ id: result.insertId, nombre, correo });
+    db.query('INSERT INTO usuarios SET ?', nuevoUsuario, (err, result) => {
+        if (err) {
+            console.error('Error al crear el usuario:', err);
+            return res.status(500).json({ error: 'Error al crear el usuario' });
+        }
+        res.status(201).json({ id: result.insertId, ...nuevoUsuario });
     });
 });
 
-// Actualizar un usuario
+// Actualizar un usuario existente
 router.put('/:id', (req, res) => {
-    const { id } = req.params;
-    const { nombre, correo } = req.body;
+    const id = req.params.id;
+    const { nombre_usuario, nombre, apellido } = req.body;
+    const datosActualizados = { nombre_usuario, nombre, apellido };
 
-    db.query('UPDATE usuarios SET nombre = ?, correo = ? WHERE id = ?', [nombre, correo, id], (err, result) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json({ mensaje: 'Usuario actualizado' });
+    db.query('UPDATE usuarios SET ? WHERE id = ?', [datosActualizados, id], (err) => {
+        if (err) {
+            console.error('Error al actualizar el usuario:', err);
+            return res.status(500).json({ error: 'Error al actualizar el usuario' });
+        }
+        res.json({ id, ...datosActualizados });
     });
 });
 
-// Borrar un usuario
+// Eliminar un usuario
 router.delete('/:id', (req, res) => {
-    const { id } = req.params;
-    db.query('DELETE FROM usuarios WHERE id = ?', [id], (err, result) => {
-        if (err) return res.status(500).json({ error: err });
-        res.json({ mensaje: 'Usuario eliminado' });
+    const id = req.params.id;
+    db.query('DELETE FROM usuarios WHERE id = ?', [id], (err) => {
+        if (err) {
+            console.error('Error al eliminar el usuario:', err);
+            return res.status(500).json({ error: 'Error al eliminar el usuario' });
+        }
+        res.json({ mensaje: 'Usuario eliminado exitosamente' });
     });
 });
 
